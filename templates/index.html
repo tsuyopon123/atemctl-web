@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATEM Mini Controller</title>
+    <!-- Bootstrap CSS -->
+    <link href="{{ url_for('static', filename='bootstrap.min.css') }}" rel="stylesheet">
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <a class="navbar-brand" href="#">ATEM Controller</a>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
+            aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <span class="navbar-text">Server</span>
+                    <span id="server-status" class="badge badge-secondary">Loading...</span>
+                </li>
+                <li class="nav-item ml-3">
+                    <span class="navbar-text">ATEM Mini Pro ISO</span>
+                    <span id="atem-status" class="badge badge-secondary">Loading...</span>
+                </li>
+                <li class="nav-item ml-3">
+                    <button class="btn btn-outline-secondary" onclick="toggleFullscreen()">全画面表示</button>
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mt-5">
+        <div class="row">
+
+            <!-- マクロのボタン -->
+            <div class="col-md-6">
+                <h5>マクロ</h5>
+                <div class="row">
+                    {% for macro in macros %}
+                    <div class="col-3 mb-2">
+                        <button class="btn btn-secondary w-100 macro-btn"
+                            onclick="runMacro({{ loop.index0 }});handleButtonClick(this, 'macro-btn')">{{ macro
+                            }}</button>
+                    </div>
+                    {% if loop.index % 4 == 0 %}
+                </div>
+                <div class="row">
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Stillのボタン -->
+            <div class="col-md-6">
+                <h5>スチル</h5>
+                <div class="row">
+                    {% for still in stills %}
+                    <div class="col-3 mb-2">
+                        <button class="btn btn-light w-100 still-btn"
+                            onclick="switchStill({{ loop.index0 }});handleButtonClick(this, 'still-btn')">{{ still
+                            }}</button>
+                    </div>
+                    {% if loop.index % 4 == 0 %}
+                </div>
+                <div class="row">
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    </div>
+
+    <!-- Bootstrap JS, Popper.js, and jQuery -->
+    <script src="{{ url_for('static', filename='jquery-3.7.1.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='popper.min.js') }}"></script>
+    <script src="{{ url_for('static', filename='bootstrap.min.js') }}"></script>
+
+    <script>
+        function runMacro(id) {
+            fetch('/run_macro', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'macro_id=' + id
+            });
+        }
+
+        function switchStill(id) {
+            fetch('/switch_still', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'still_id=' + id
+            });
+        }
+
+        function updateStatus() {
+            fetch('/status').then(response => response.json()).then(data => {
+                document.getElementById('server-status').textContent = data.server_status;
+                document.getElementById('atem-status').textContent = data.atem_status;
+            });
+            setTimeout(updateStatus, 5000);  // 5秒ごとにステータスを更新
+        }
+
+        updateStatus();  // 初期ロード時にステータスを更新
+
+        function handleButtonClick(clickedBtn, btnClass) {
+            // 全てのボタンの色をデフォルトにリセット
+            const allButtons = document.querySelectorAll('.' + btnClass);
+            allButtons.forEach((btn) => {
+                if (btnClass === 'macro-btn') {
+                    btn.classList.remove('btn-danger');
+                    btn.classList.add('btn-secondary');
+                } else {
+                    btn.classList.remove('btn-warning');
+                    btn.classList.add('btn-light');
+                }
+            });
+
+            // クリックされたボタンの色を変更
+            if (btnClass === 'macro-btn') {
+                clickedBtn.classList.remove('btn-secondary');
+                clickedBtn.classList.add('btn-danger');
+            } else {
+                clickedBtn.classList.remove('btn-light');
+                clickedBtn.classList.add('btn-warning');
+            }
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) { // 全画面表示でなければ
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen(); // 通常のブラウザ
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen(); // 通常のブラウザ
+                }
+            }
+        }
+
+    </script>
+
+</body>
+
+</html>
